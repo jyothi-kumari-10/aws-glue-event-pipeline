@@ -83,6 +83,7 @@ done
 aws s3 cp "$SCRIPT_DIR/../glue_job.py" "s3://$SCRIPTS_BUCKET/scripts/glue_job.py"
 echo "Uploaded glue_job.py to scripts bucket"
 
+
 # ---------- 3. Glue Database ----------
 echo "== Glue database =="
 
@@ -238,5 +239,18 @@ aws s3api put-bucket-notification-configuration \
   --bucket "$INPUT_BUCKET" \
   --notification-configuration file:///tmp/notification.json
 echo "S3 event notification wired to Lambda"
+
+# ---------- 8. Sample input file (smoke test) ----------
+# Uploaded LAST, after the S3 event notification is wired up above -- so this
+# actually fires the real S3 -> Lambda -> Glue Workflow chain, exactly as if a
+# person had uploaded it manually. Gives every deploy run a genuine proof the
+# pipeline processes data end-to-end, not just that the AWS resources exist.
+echo "== Uploading sample input to trigger the pipeline =="
+if [ -d "$SCRIPT_DIR/../sample-input" ]; then
+  aws s3 cp "$SCRIPT_DIR/../sample-input/" "s3://$INPUT_BUCKET/input/" --recursive
+  echo "Uploaded sample-input/ files -- this should trigger the workflow within a minute or two"
+else
+  echo "No sample-input/ folder found, skipping smoke test upload"
+fi
 
 echo "== Deploy complete =="

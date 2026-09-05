@@ -1,0 +1,6 @@
+productID,productName,quantityPerUnit,unitPrice,discontinued,categoryID
+101,Ceylon Cinnamon,50 g jar,6.5,0,2
+102,Alphonso Mango Pulp,850 g can,3.75,0,7
+103,Basmati Rice,5 kg bag,12,0,5
+104,Discontinued Sample Item,1 kg pkg,9.99,1,3
+105,Organic Honey,500 ml jar,8.2,0,2
