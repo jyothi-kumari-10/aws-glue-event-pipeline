@@ -27,7 +27,7 @@ echo "== IAM roles =="
 if ! aws iam get-role --role-name "$LAMBDA_ROLE_NAME" >/dev/null 2>&1; then
   aws iam create-role \
     --role-name "$LAMBDA_ROLE_NAME" \
-    --assume-role-policy-document "file://$SCRIPT_DIR/iam/lambda-trust-policy.json"
+    --assume-role-policy-document "file://$SCRIPT_DIR/../iam/lambda-trust-policy.json"
   aws iam attach-role-policy --role-name "$LAMBDA_ROLE_NAME" \
     --policy-arn arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess
   aws iam attach-role-policy --role-name "$LAMBDA_ROLE_NAME" \
@@ -42,7 +42,7 @@ fi
 if ! aws iam get-role --role-name "$GLUE_ROLE_NAME" >/dev/null 2>&1; then
   aws iam create-role \
     --role-name "$GLUE_ROLE_NAME" \
-    --assume-role-policy-document "file://$SCRIPT_DIR/iam/glue-trust-policy.json"
+    --assume-role-policy-document "file://$SCRIPT_DIR/../iam/glue-trust-policy.json"
   aws iam attach-role-policy --role-name "$GLUE_ROLE_NAME" \
     --policy-arn arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
   aws iam attach-role-policy --role-name "$GLUE_ROLE_NAME" \
