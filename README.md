@@ -72,7 +72,9 @@ Region: `ap-southeast-2`
 
 ## 1. Manual build (proving the design first)
 
-Before automating anything, every piece was built and tested by hand in the
+Before automating anything, every piece was bui
+
+lt and tested by hand in the
 AWS Console. This is the same order a person would click through, and it's
 what the CI script in `scripts/deploy.sh` later recreates as code.
 
@@ -160,14 +162,24 @@ productID,productName,quantityPerUnit,unitPrice,discontinued,categoryID,priceWit
 
 ![Glue job script upload](screenshots/10-glue-job-script-upload.png)
 *Uploading glue_job.py as the script for the new Python Shell job.*
+
+
 ![Glue job details saved](screenshots/11-glue-job-details-saved.png)
 *Job details saved for product-transform-job, using glue-role.*
+
+
 ![Glue job run succeeded](screenshots/12-glue-job-run-succeeded.png)
 *First manual run of the job succeeds in 14 seconds on 0.0625 DPUs.*
+
+
 ![CloudWatch job logs output](screenshots/13-cloudwatch-job-logs-output.png)
 *CloudWatch output logs showing the job's print statements as it ran.*
+
+
 ![S3 output file created](screenshots/14-s3-output-file-created.png)
 *products_transformed.csv appears in the output bucket.*
+
+
 ![Output CSV opened in Excel](screenshots/15-output-csv-opened-excel.png)
 *Output file opened in Excel: discontinued rows dropped, names uppercased, priceWithTax added.*
 
