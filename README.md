@@ -17,6 +17,8 @@ All screenshots referenced below are in `screenshots/`, numbered in the order
 the pipeline was actually built.
 
 ---
+## Architecture Diagram
+![Architecture Diagram](architecture-diagram.png)
 
 ## AWS Resources Used
 
