@@ -5,7 +5,10 @@ on:
   push:
     branches: [main]
     paths:
-      - "pipeline-deploy/**"
+      - "scripts/**"
+      - "glue_job.py"
+      - "lambda_function.py"
+      - "iam/**"
 
 jobs:
   deploy:
@@ -23,5 +26,5 @@ jobs:
 
       - name: Run deploy script
         run: |
-          chmod +x pipeline-deploy/scripts/deploy.sh
-          ./pipeline-deploy/scripts/deploy.sh
+          chmod +x scripts/deploy.sh
+          ./scripts/deploy.sh

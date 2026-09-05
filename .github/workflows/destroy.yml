@@ -19,5 +19,5 @@ jobs:
 
       - name: Run destroy script
         run: |
-          chmod +x pipeline-deploy/scripts/destroy.sh
-          ./pipeline-deploy/scripts/destroy.sh
+          chmod +x scripts/destroy.sh
+          ./scripts/destroy.sh
