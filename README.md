@@ -96,7 +96,7 @@ Two roles were created first, since every other service depends on them:
 ### 1.2 S3 Buckets
 
 Three separate buckets (per-file separation, rather than one bucket with
-prefixes — this was a deliberate choice; see [Design Decisions](#design-decisions)):
+prefixes ):
 
 - `adej-pipeline-input/input/` — where CSVs are uploaded
 - `adej-pipeline-output/output/` — where transformed results land
