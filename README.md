@@ -74,24 +74,38 @@ Region: `ap-southeast-2`
 
 ## 1. Manual build (proving the design first)
 
-Before automating anything, every piece was built and tested by hand in the
+Before automating anything, every piece was but and tested by hand in the
 AWS Console. This is the same order a person would click through, and it's
 what the CI script in `scripts/deploy.sh` later recreates as code.
 
 ### 1.1 IAM Roles
 
+Search **IAM** -> `Roles` -> `Trusted Entity Type`: AWS Service -> `Use Case` -> `Select Permission Policies` -> `Role Name` -> `Create Role`
+
 Two roles were created first, since every other service depends on them:
 
-- **`lambda-role`** — lets Lambda call `glue:StartWorkflowRun` and write logs
-- **`glue-role`** — lets Glue crawlers/jobs read and write S3, and use the Data Catalog
+- **`lambda-role`**
 
-![Lambda role created](screenshots/01-iam-lambda-role-created.png)
-*lambda-role created, with S3 read, Glue, and CloudWatch Logs permissions attached.*
+`Use Case`: 'Lambda  
+`Select Permission Policies`:  
+->AmazonS3ReadOnlyAccess (to read s3)  
+->AWSGlueConsoleFullAccess (to start glue jobs/workflows)  
+->CloudWatchLogsFullAccess (to write logs)  
+`Name`: 'lambda-role'
 
-![Glue role created](screenshots/02-iam-glue-role-created.png)
-*glue-role created, with S3 full access, Glue service, and CloudWatch Logs permissions attached.*
+- **`glue-role`**
+
+`Use Case`: 'Glue'  
+`Select Permission Policies`:  
+->AmazonS3FullAccess (to read and write S3)  
+->AWSGlueServiceRole (baseline permission)  
+->CloudWatchLogsFullAccess (to write logs)  
+`Name`: 'glue-role'
+
 
 ### 1.2 S3 Buckets
+
+Search **S3** -> `Create Bucket` -> `Bucket Name` -> `Block all publiuc access` -> `Bucket Versioning`: Disable -> `Default Encryption`: SSE-S3 -> `Create Bucket`
 
 Three separate buckets (per-file separation, rather than one bucket with
 prefixes ):
@@ -100,33 +114,21 @@ prefixes ):
 - `adej-pipeline-output/output/` — where transformed results land
 - `adej-pipeline-scripts/scripts/` — holds the Glue job's Python script
 
-![S3 buckets created](screenshots/03-s3-buckets-created.png)
-*All three buckets (input, output, scripts) visible in the S3 console.*
 
 ### 1.3 Glue Database (the Catalog namespace)
+
+Search `AWS Glue` -> `Data Catalog` -> `Databases` -> `Add Database` -> `Database type`: Glue Database -> `Name`: adej_pipeline_db -> `Description`: Catalog for event-driven CSV pipeline -> `Create Database`
 
 An empty Glue Database (`adej_pipeline_db`) was created to hold the catalog
 tables that crawlers would later populate.
 
-![Glue database create form](screenshots/04-glue-database-create-form.png)
-*Creating the empty adej_pipeline_db Glue database.*
 
 ### 1.4 Crawler #1 — catalogs the input data
 
-Points at `s3://adej-pipeline-input/input/`, infers the CSV schema, and
-creates a table (`input_input`) in the catalog.
+`AWS Glue` -> `Data Catalog`-> `Crawlers` -> `Create Crawlers` -> `Name`:**input-crawler** -> `Data source configuration`: Not yet -> `Add a data source` -> `Data source`: S3 -> `Location of S3 data`: In this account -> `Browse S3`: **s3://adej-pipeline-input/input/** -> `Subsequent Crwaler Runs`: Crawl All sub folders -> `Add an S3 datasource` -> Next -> `IAM Role` -> Use another role: **glue-role** ->`Target Database`: **adej-pipeline_db** -> `Table name prefix`: input_ -> `Crawler schedule`: On demand -> `Create Crawler`
 
-![Crawler input set properties](screenshots/05-crawler-input-set-properties.png)
-*Naming the crawler input-crawler in the first setup step.*
+Points at `s3://adej-pipeline-input/input/`, infers the CSV schema, and creates a table (`input_input`) in the catalog.
 
-![Crawler input add datasource](screenshots/06-crawler-input-add-datasource.png)
-*Pointing the crawler at s3://adej-pipeline-input/input/ as its data source.*
-
-![Crawler input created](screenshots/07-crawler-input-created.png)
-*input-crawler successfully created, state READY.*
-
-![Crawler input run completed](screenshots/08-crawler-input-run-completed.png)
-*First manual run of input-crawler completes in 37 seconds.*
 
 ![Glue catalog table input created](screenshots/09-glue-catalog-table-input-created.png)
 *The input_input table appears in the Glue Data Catalog after the crawler run.*
@@ -160,20 +162,7 @@ productID,productName,quantityPerUnit,unitPrice,discontinued,categoryID,priceWit
 
 (Row 5 is dropped — `discontinued == 1`.)
 
-![Glue job script upload](screenshots/10-glue-job-script-upload.png)
-*Uploading glue_job.py as the script for the new Python Shell job.*
 
-
-![Glue job details saved](screenshots/11-glue-job-details-saved.png)
-*Job details saved for product-transform-job, using glue-role.*
-
-
-![Glue job run succeeded](screenshots/12-glue-job-run-succeeded.png)
-*First manual run of the job succeeds in 14 seconds on 0.0625 DPUs.*
-
-
-![CloudWatch job logs output](screenshots/13-cloudwatch-job-logs-output.png)
-*CloudWatch output logs showing the job's print statements as it ran.*
 
 
 ![S3 output file created](screenshots/14-s3-output-file-created.png)
@@ -191,8 +180,6 @@ Points at `s3://adej-pipeline-output/output/`, creating a second table
 ![Glue catalog both tables](screenshots/16-glue-catalog-both-tables.png)
 *Both input_input and output_output tables now listed in the catalog.*
 
-![Glue catalog output table schema](screenshots/17-glue-catalog-output-table-schema.png)
-*Schema of output_output, confirming priceWithTax was inferred as a double (numeric), not a string.*
 
 ### 1.7 Glue Workflow — orchestration
 
@@ -204,14 +191,7 @@ start-trigger → input-crawler → after-input-crawler
     → product-transform-job → after-job → output-crawler
 ```
 
-![Glue workflow created](screenshots/18-glue-workflow-created.png)
-*pipeline-workflow created, with an empty graph before any triggers are added.*
 
-![Glue workflow trigger add crawler](screenshots/19-glue-workflow-trigger-add-crawler.png)
-*Attaching input-crawler to the workflow's first trigger.*
-
-![Glue workflow full graph built](screenshots/20-glue-workflow-full-graph-built.png)
-*The full workflow graph: start-trigger through output-crawler, all wired together.*
 
 ![Glue workflow first full run succeeded](screenshots/21-glue-workflow-first-full-run-succeeded.png)
 *First full manual run of the workflow completes, every node succeeded.*
@@ -223,14 +203,7 @@ A small Lambda function (`trigger-glue-workflow`) that calls
 (via workflow **run properties**) so the job processes only that file, not
 everything in the bucket.
 
-![Lambda create function](screenshots/22-lambda-create-function.png)
-*Creating the trigger-glue-workflow Lambda function.*
 
-![Lambda code pasted](screenshots/23-lambda-code-pasted.png)
-*Lambda code pasted in, calling glue.start_workflow_run().*
-
-![Lambda test invocation succeeded](screenshots/24-lambda-test-invocation-succeeded.png)
-*Manual Lambda test succeeds, returning the started workflow's run ID.*
 
 ### 1.9 S3 Event Notification
 
@@ -238,8 +211,6 @@ A rule on the input bucket: whenever an object matching `prefix=input/`,
 `suffix=.csv` is created, invoke the Lambda above. This is what makes the
 whole thing actually event-driven rather than manually triggered.
 
-![Lambda S3 trigger config](screenshots/25-lambda-s3-trigger-config.png)
-*Configuring the S3 trigger on Lambda: prefix input/, suffix .csv.*
 
 ![Lambda S3 trigger added](screenshots/26-lambda-s3-trigger-added.png)
 *S3 trigger now attached to the Lambda function.*
@@ -280,8 +251,6 @@ no new tooling on top of everything else being learned.
 └── lambda_function.py
 ```
 
-![GitHub repo structure](screenshots/28-github-repo-structure.png)
-*Repository pushed to GitHub with the final folder structure.*
 
 ### 2.2 CI-specific IAM user
 
@@ -292,8 +261,6 @@ personal AWS login — with access keys stored as GitHub repository secrets
 ![IAM CI user permissions summary](screenshots/29-iam-ci-user-permissions-summary.png)
 *Permissions attached to the github-actions-ci IAM user before creation.*
 
-![IAM CI user access key usecase](screenshots/30-iam-ci-user-access-key-usecase.png)
-*Selecting "Third-party service" as the access key's use case for CI.*
 
 ### 2.3 `deploy.sh` — idempotent, safe to re-run
 
@@ -303,8 +270,6 @@ The very last step uploads `sample-input/products.csv` to the input bucket —
 since the S3 notification is wired up by this point in the script, this
 upload triggers a **real** run of the pipeline as a built-in smoke test.
 
-![GitHub Actions Deploy Pipeline setup](screenshots/31-github-actions-deploy-pipeline-setup.png)
-*Deploy Pipeline workflow visible in the Actions tab, not yet run.*
 
 ![GitHub Actions deploy succeeded](screenshots/32-github-actions-deploy-succeeded.png)
 *Deploy Pipeline run completes successfully end to end.*
