@@ -1,0 +1,29 @@
+name: Destroy Pipeline (CloudFormation)
+
+on:
+  workflow_dispatch:   # manual trigger only
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-2
+
+      - name: Empty S3 buckets
+        run: |
+          aws s3 rm s3://adej-pipeline-input --recursive || true
+          aws s3 rm s3://adej-pipeline-output --recursive || true
+          aws s3 rm s3://adej-pipeline-scripts --recursive || true
+
+      - name: Delete CloudFormation stack
+        run: |
+          aws cloudformation delete-stack --stack-name adej-pipeline-stack
+          aws cloudformation wait stack-delete-complete --stack-name adej-pipeline-stack
