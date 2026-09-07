@@ -74,9 +74,7 @@ Region: `ap-southeast-2`
 
 ## 1. Manual build (proving the design first)
 
-Before automating anything, every piece was bui
-
-lt and tested by hand in the
+Before automating anything, every piece was built and tested by hand in the
 AWS Console. This is the same order a person would click through, and it's
 what the CI script in `scripts/deploy.sh` later recreates as code.
 
